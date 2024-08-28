@@ -1,0 +1,35 @@
+datasource db {
+  provider = "postgresql" // or "mysql" or "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Admin {
+  id       Int    @id @default(autoincrement())
+  username String @unique
+  password String
+
+  @@map("admin")
+}
+
+model Category {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+  blogs Blog[]
+
+  @@map("category")
+}
+
+model Blog {
+  id         Int      @id @default(autoincrement())
+  title      String
+  content    String
+  image      String?
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  @@map("blog")
+}
