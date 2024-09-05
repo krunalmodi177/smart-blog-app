@@ -9,16 +9,17 @@ generator client {
 
 model Admin {
   id       Int    @id @default(autoincrement())
-  username String @unique
+  email    String @unique
   password String
 
   @@map("admin")
 }
 
 model Category {
-  id   Int    @id @default(autoincrement())
-  name String @unique
-  blogs Blog[]
+  id        Int     @id @default(autoincrement())
+  name      String  @unique
+  isDeleted Boolean @default(false) @map("is_deleted")
+  blogs     Blog[]
 
   @@map("category")
 }
@@ -28,8 +29,9 @@ model Blog {
   title      String
   content    String
   image      String?
-  categoryId Int
+  categoryId Int      @map("category_id")
   category   Category @relation(fields: [categoryId], references: [id])
+  isDeleted  Boolean  @default(false) @map("is_deleted")
 
   @@map("blog")
 }

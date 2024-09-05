@@ -1,17 +1,20 @@
 import { Request, Response } from "express";
 import prisma from "../../prisma/db";
 import { AwsHelperService } from "../../helpers/awsHelper.service";
+import { Messages } from "../../helpers/messages";
+import { CommonHelperService } from "../../helpers/commonHelper.service";
 
 export class BlogController {
     private readonly awsHelperService: AwsHelperService = new AwsHelperService();
+    private readonly commonHelper: CommonHelperService = new CommonHelperService();
     constructor() { }
     async uploadBlogImage(req: Request, res: Response) {
         const { image, mimeType } = req.body;
         const imageUrl = await this.awsHelperService.upload(image, mimeType);
-        return res.status(200).json({
+        return this.commonHelper.sendResponse(res, 200, {
             imageUrl,
             image,
-        })
+        });
     }
 
     async createBlog(req: Request, res: Response) {
@@ -20,9 +23,9 @@ export class BlogController {
             const blog = await prisma.blog.create({
                 data: value,
             });
-            res.status(201).json(blog);
+            return this.commonHelper.sendResponse(res, 201, { blog });
         } catch (err) {
-            res.status(500).json({ error: 'Internal Server Error' });
+            return this.commonHelper.sendResponse(res, 500, undefined, Messages.SOMETHING_WENT_WRONG);
         }
 
     }
@@ -34,9 +37,10 @@ export class BlogController {
                     category: true,
                 },
             });
-            res.status(200).json(blogs);
+            return this.commonHelper.sendResponse(res, 200, { blogs });
         } catch (err) {
-            res.status(500).json({ error: 'Internal Server Error' });
+            return this.commonHelper.sendResponse(res, 500, undefined, Messages.SOMETHING_WENT_WRONG);
+
         }
     }
 
@@ -47,9 +51,9 @@ export class BlogController {
                 where: { id: parseInt(id) },
                 data: req.body,
             });
-            res.status(200).json(blog);
+            return this.commonHelper.sendResponse(res, 200, { blog }, Messages.BLOG_UPDATED);
         } catch (err) {
-            res.status(500).json({ error: 'Internal Server Error' });
+            return this.commonHelper.sendResponse(res, 500, undefined, Messages.SOMETHING_WENT_WRONG);
         }
 
     }
@@ -61,8 +65,9 @@ export class BlogController {
                 where: { id: parseInt(id) },
             });
             res.status(204).send();
+            return this.commonHelper.sendResponse(res, 201, undefined, Messages.BLOG_DELETED);
         } catch (err) {
-            res.status(500).json({ error: 'Internal Server Error' });
+            return this.commonHelper.sendResponse(res, 500, undefined, Messages.SOMETHING_WENT_WRONG);
         }
 
     }
