@@ -2,25 +2,29 @@ import { Request, Response } from "express";
 import prisma from "../../prisma/db";
 import { Prisma } from "@prisma/client";
 import { Messages } from "../../helpers/messages";
+import { CommonHelperService } from "../../helpers/commonHelper.service";
 
 export class CategoryController {
+  private readonly commonHelper: CommonHelperService = new CommonHelperService();
+
   async createCategory(req: Request, res: Response) {
     const { name } = req.body;
     try {
       const existingCategory = await prisma.category.findUnique({
         where: { name },
       });
-  
+
       if (existingCategory) {
-        return res.status(400).json({ msg: Messages.CATEGORY_EXISTS });
+        return this.commonHelper.sendResponse(res, 400, undefined, Messages.CATEGORY_EXISTS);
       }
 
       const category = await prisma.category.create({
         data: { name },
       });
-      res.status(201).json(category);
+      return this.commonHelper.sendResponse(res, 201, category, Messages.CATEGORY_CREATED);
+
     } catch (error) {
-      res.status(500).json({ error: Messages.SOMETHING_WENT_WRONG });
+      return this.commonHelper.sendResponse(res, 500, undefined, Messages.SOMETHING_WENT_WRONG);
     }
   };
 
@@ -30,7 +34,7 @@ export class CategoryController {
 
       const sortOptions: Prisma.CategoryOrderByWithRelationInput = sortBy
         ? { [sortBy as string]: sortOrder === 'desc' ? 'desc' : 'asc' }
-        : { id: 'asc' }; 
+        : { id: 'asc' };
       const skip = (Number(page) - 1) * Number(pageSize);
       const take = Number(pageSize);
 
@@ -40,14 +44,14 @@ export class CategoryController {
 
       if (search) {
         whereQuery = {
-          ...whereQuery, 
+          ...whereQuery,
           name: {
             contains: search as string,
             mode: 'insensitive'
           }
         }
       }
-      
+
 
       // Fetch categories with search, sort, and pagination
       const categories = await prisma.category.findMany({
@@ -59,26 +63,42 @@ export class CategoryController {
 
       // Get total count for pagination
       const totalCount = await prisma.category.count({ where: whereQuery });
-      res.status(201).json({
+      const data = {
         categories,
         totalCount,
-      });
+      }
+      return this.commonHelper.sendResponse(res, 200, data);
     } catch (error) {
-      res.status(500).json({ error: Messages.SOMETHING_WENT_WRONG });
+      return this.commonHelper.sendResponse(res, 500, undefined, Messages.SOMETHING_WENT_WRONG);
     }
   }
 
   async updateCategory(req: Request, res: Response) {
     const { id } = req.params;
     const value = req.body;
+    const { name } = req.body;
     try {
+      const existingCategory = await prisma.category.findUnique({
+        where: {
+          NOT: {
+            id: parseInt(id),
+          },
+          name,
+          isDeleted: false,
+        },
+      });
+
+      // If an existing category with the same name is found, return an error response
+      if (existingCategory) {
+        return this.commonHelper.sendResponse(res, 400, undefined, Messages.CATEGORY_EXISTS);
+      }
       const category = await prisma.category.update({
         where: { id: parseInt(id) },
         data: value,
       });
-      res.status(200).json(category);
+      return this.commonHelper.sendResponse(res, 200, category, Messages.CATEGORY_UPDATED);
     } catch (err) {
-      res.status(500).json({ error: Messages.SOMETHING_WENT_WRONG });
+      return this.commonHelper.sendResponse(res, 500, undefined, Messages.SOMETHING_WENT_WRONG);
     }
   };
 
@@ -89,9 +109,9 @@ export class CategoryController {
       await prisma.category.delete({
         where: { id: parseInt(id) },
       });
-      res.status(204).send();
+      return this.commonHelper.sendResponse(res, 200, undefined, Messages.CATEGORY_DELETD);
     } catch (err) {
-      res.status(500).json({ error: Messages.SOMETHING_WENT_WRONG });
+      return this.commonHelper.sendResponse(res, 500, undefined, Messages.SOMETHING_WENT_WRONG);
     }
   }
 

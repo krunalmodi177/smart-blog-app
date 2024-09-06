@@ -20,6 +20,14 @@ export class BlogController {
     async createBlog(req: Request, res: Response) {
         const value = req.body;
         try {
+            const isCategoryExists = await prisma.category.findUnique({
+                where: { id: value.categoryId },
+              });
+          
+              if (!isCategoryExists) {
+                return res.status(400).json({ msg: Messages.CATEGORY_NOT_EXISTS });
+              }
+        
             const blog = await prisma.blog.create({
                 data: value,
             });

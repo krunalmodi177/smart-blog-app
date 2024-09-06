@@ -1,4 +1,5 @@
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { SESClient, SendEmailCommand, SendEmailCommandInput } from "@aws-sdk/client-ses";
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 const region = process.env.REGION || 'us-east-1'
@@ -43,6 +44,21 @@ export class AwsHelperService {
         } catch (error) {
             console.error('[Error] From getSignedUrlBucket in aws.s3.service', error);
             throw error;
+        }
+    }
+
+    async sendEmail(params: SendEmailCommandInput) {
+        try {
+            const ses = new SESClient({ region: process.env.AWS_REGION });
+
+            // Create and send email command
+            const command = new SendEmailCommand(params);
+            const sesResult = await ses.send(command);
+
+            return sesResult;
+
+        } catch (error) {
+
         }
     }
 }
