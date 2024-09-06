@@ -3,6 +3,7 @@ import prisma from "../../prisma/db";
 import { Prisma } from "@prisma/client";
 import { Messages } from "../../helpers/messages";
 import { CommonHelperService } from "../../helpers/commonHelper.service";
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from "../../helpers/constants";
 
 export class CategoryController {
   private readonly commonHelper: CommonHelperService = new CommonHelperService();
@@ -30,7 +31,7 @@ export class CategoryController {
 
   async getCategories(req: Request, res: Response) {
     try {
-      const { search, sortBy, sortOrder, page = 1, pageSize = 10 } = req.query;
+      const { search, sortBy, sortOrder, page = DEFAULT_PAGE, pageSize = DEFAULT_PAGE_SIZE } = req.query;
 
       const sortOptions: Prisma.CategoryOrderByWithRelationInput = sortBy
         ? { [sortBy as string]: sortOrder === 'desc' ? 'desc' : 'asc' }
