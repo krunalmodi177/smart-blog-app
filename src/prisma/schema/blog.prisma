@@ -1,0 +1,11 @@
+model Blog {
+    id         Int      @id @default(autoincrement())
+    title      String
+    content    String
+    image      String?
+    categoryId Int      @map("category_id")
+    category   Category @relation(fields: [categoryId], references: [id])
+    isDeleted  Boolean  @default(false) @map("is_deleted")
+
+    @@map("blog")
+}

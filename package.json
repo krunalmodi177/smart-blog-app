@@ -7,12 +7,12 @@
     "build": "npx tsc",
     "start": "node dist/main.js",
     "dev": "tsc-watch --onSuccess 'node --trace-uncaught ./dist/main.js'",
-    "prisma:generate": "npx prisma generate",
+    "prisma:generate": "npx prisma generate --schema src/prisma/schema",
     "migrate:create": "npx prisma migrate dev --create-only --name $npm_config_fileName",
     "migrate:deploy": "npx prisma migrate dev"
   },
   "prisma": {
-    "schema": "src/prisma/schema.prisma"
+    "schema": "src/prisma/schema/schema.prisma"
   },
   "keywords": [],
   "author": "",
