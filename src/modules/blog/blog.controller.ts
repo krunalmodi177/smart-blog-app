@@ -10,7 +10,7 @@ export class BlogController {
     private readonly awsHelperService: AwsHelperService = new AwsHelperService();
     private readonly commonHelper: CommonHelperService = new CommonHelperService();
     constructor() { }
-    async uploadBlogImage(req: Request, res: Response) {
+    uploadBlogImage = async (req: Request, res: Response) => {
         const { image, mimeType } = req.body;
         const imageUrl = await this.awsHelperService.upload(image, mimeType);
         return this.commonHelper.sendResponse(res, 200, {
@@ -19,7 +19,7 @@ export class BlogController {
         });
     }
 
-    async createBlog(req: Request, res: Response) {
+    createBlog = async(req: Request, res: Response) => {
         const value = req.body;
         try {
             const isCategoryExists = await prisma.category.findUnique({
@@ -40,8 +40,9 @@ export class BlogController {
 
     }
 
-    async getBlogs(req: Request, res: Response) {
+    getBlogs = async(req: Request, res: Response) => {
         try {
+
             const { search, sortBy, sortOrder, page = DEFAULT_PAGE, pageSize = DEFAULT_PAGE_SIZE } = req.query;
 
             const sortOptions: Prisma.BlogOrderByWithRelationInput = sortBy
@@ -84,7 +85,7 @@ export class BlogController {
         }
     }
 
-    async updateBlog(req: Request, res: Response) {
+    updateBlog = async(req: Request, res: Response) => {
         const { id } = req.params;
         try {
             const blog = await prisma.blog.update({
@@ -98,7 +99,7 @@ export class BlogController {
 
     }
 
-    async deleteBlog(req: Request, res: Response) {
+    deleteBlog = async(req: Request, res: Response) => {
         const { id } = req.params;
         try {
             await prisma.blog.delete({

@@ -11,9 +11,11 @@ export class AuthController {
     private readonly commonHelper = new CommonHelperService();
     private readonly awsHelperService = new AwsHelperService();
 
-    public async login(req: Request, res: Response) {
+    login = async (req: Request, res: Response) => {
         const { email, password } = req.body;
         try {
+            const temp = await bcrypt.hash(password, 10);
+            
             const admin = await prisma.admin.findUnique({ where: { email } });
             if (!admin || !(await bcrypt.compare(password, admin.password))) {
                 return res.status(401).json({ msg: 'Invalid credentials' });
@@ -24,7 +26,7 @@ export class AuthController {
             return this.commonHelper.sendResponse(res, 500, undefined, Messages.SOMETHING_WENT_WRONG);
         }
     }
-    async changePassword(req: Request, res: Response) {
+    changePassword = async (req: Request, res: Response) => {
         const { currentPassword, newPassword } = req.body;
         try {
             const admin = await prisma.admin.findUnique({ where: { id: req.admin.id } });
@@ -42,7 +44,7 @@ export class AuthController {
         }
     };
 
-    async forgotPassword(req: Request, res: Response) {
+    forgotPassword = async (req: Request, res: Response) => {
         const { email } = req.body;
 
         try {
@@ -96,9 +98,9 @@ export class AuthController {
         }
     }
 
-    async resetPassword(req: Request, res: Response) {
+    resetPassword = async (req: Request, res: Response) => {
         const { email, otp, newPassword } = req.body;
-    
+
         try {
             const resetRecord = await prisma.admin.findFirst({
                 where: {
@@ -107,29 +109,29 @@ export class AuthController {
                     otpExpiresAt: { gte: new Date() }, // Check if OTP has not expired
                 },
             });
-    
+
             if (!resetRecord) {
                 return this.commonHelper.sendResponse(res, 400, undefined, Messages.OTP_EXPIRED);
             }
-    
+
             // Hash the new password
             const hashedPassword = await bcrypt.hash(newPassword, 10);
-    
+
             // Update the user's password
             await prisma.admin.update({
                 where: { id: resetRecord.id },
-                data: { 
+                data: {
                     password: hashedPassword,
                     passwordResetOtp: null,
                     otpExpiresAt: null,
-                 },
+                },
             });
-    
+
             return this.commonHelper.sendResponse(res, 200, undefined, Messages.PASSWORD_REST);
         } catch (err) {
             return this.commonHelper.sendResponse(res, 500, undefined, Messages.SOMETHING_WENT_WRONG);
         }
     }
-    
+
 
 }

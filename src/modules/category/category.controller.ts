@@ -8,7 +8,7 @@ import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from "../../helpers/constants";
 export class CategoryController {
   private readonly commonHelper: CommonHelperService = new CommonHelperService();
 
-  async createCategory(req: Request, res: Response) {
+  createCategory = async (req: Request, res: Response) => {
     const { name } = req.body;
     try {
       const existingCategory = await prisma.category.findUnique({
@@ -29,7 +29,7 @@ export class CategoryController {
     }
   };
 
-  async getCategories(req: Request, res: Response) {
+  getCategories = async (req: Request, res: Response) => {
     try {
       const { search, sortBy, sortOrder, page = DEFAULT_PAGE, pageSize = DEFAULT_PAGE_SIZE } = req.query;
 
@@ -74,7 +74,7 @@ export class CategoryController {
     }
   }
 
-  async updateCategory(req: Request, res: Response) {
+  updateCategory = async (req: Request, res: Response) => {
     const { id } = req.params;
     const value = req.body;
     const { name } = req.body;
@@ -103,7 +103,7 @@ export class CategoryController {
     }
   };
 
-  async deleteCategory(req: Request, res: Response) {
+  deleteCategory = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     try {
