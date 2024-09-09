@@ -11,5 +11,7 @@ export const Messages = {
     ADMIN_NOT_FOUND: 'Admin not found',
     OTP_SUCCESS: 'OTP sent to your email',
     OTP_EXPIRED: 'Invalid or expired OTP',
-    PASSWORD_REST: 'Password successfully reset'
+    PASSWORD_REST: 'Password successfully reset',
+    INVALID_CREDS: "Invalid Credentials",
+    INVALID_PASSWORD: "Invalid current password"
 }

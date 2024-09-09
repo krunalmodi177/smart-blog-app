@@ -14,11 +14,9 @@ export class AuthController {
     login = async (req: Request, res: Response) => {
         const { email, password } = req.body;
         try {
-            const temp = await bcrypt.hash(password, 10);
-            
             const admin = await prisma.admin.findUnique({ where: { email } });
             if (!admin || !(await bcrypt.compare(password, admin.password))) {
-                return res.status(401).json({ msg: 'Invalid credentials' });
+                return this.commonHelper.sendResponse(res, 401, undefined, Messages.INVALID_CREDS);
             }
             const token = jwt.sign({ id: admin.id }, process.env.SECRET_KEY as string, { expiresIn: '1h' });
             return this.commonHelper.sendResponse(res, 200, { token });
@@ -31,7 +29,7 @@ export class AuthController {
         try {
             const admin = await prisma.admin.findUnique({ where: { id: req.admin.id } });
             if (!admin || !(await bcrypt.compare(currentPassword, admin.password))) {
-                return res.status(401).json({ msg: 'Invalid current password' });
+                return this.commonHelper.sendResponse(res, 401, undefined, Messages.INVALID_PASSWORD);
             }
             const hashedPassword = await bcrypt.hash(newPassword, 10);
             await prisma.admin.update({
