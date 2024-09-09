@@ -5,7 +5,7 @@ const isLogsEnabled = process.env.DB_LOG_ENABLED === 'true';
 
 let prisma: PrismaClient<Prisma.PrismaClientOptions, 'query'>;
 
-if (true) {
+if (isLogsEnabled) {
   prisma = new PrismaClient({
     log: [
       {

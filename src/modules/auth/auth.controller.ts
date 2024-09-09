@@ -6,6 +6,7 @@ import { Messages } from "../../helpers/messages";
 import { CommonHelperService } from "../../helpers/commonHelper.service";
 import { SendEmailCommandInput } from "@aws-sdk/client-ses";
 import { AwsHelperService } from "../../helpers/awsHelper.service";
+import * as message from '../../locales/en.json'
 
 export class AuthController {
     private readonly commonHelper = new CommonHelperService();
@@ -16,7 +17,9 @@ export class AuthController {
         try {
             const admin = await prisma.admin.findUnique({ where: { email } });
             if (!admin || !(await bcrypt.compare(password, admin.password))) {
-                return this.commonHelper.sendResponse(res, 401, undefined, Messages.INVALID_CREDS);
+                console.log('her---');
+                
+                return this.commonHelper.sendResponse(res, 401, undefined, 'INVALID_CREDS');
             }
             const token = jwt.sign({ id: admin.id }, process.env.SECRET_KEY as string, { expiresIn: '1h' });
             return this.commonHelper.sendResponse(res, 200, { token });

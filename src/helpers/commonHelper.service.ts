@@ -1,5 +1,9 @@
+import i18n from "../i18n";
+
 export class CommonHelperService {
     sendResponse(res: any, statusCode: number, data: object[] | object = [], message: string = '') {
+        const translatedMessage = message.length > 0 ? i18n.__(message) : '';
+
         const objResponse = {
             success: true,
             code: statusCode || 200,
@@ -10,10 +14,10 @@ export class CommonHelperService {
             data,
         });
 
-        if (message.length > 0) {
+        if (translatedMessage.length > 0) {
             Object.assign(objResponse, {
                 ...objResponse,
-                message,
+                translatedMessage,
             });
         }
         return res.status(statusCode).json(objResponse);
