@@ -17,9 +17,8 @@ export class AuthController {
         try {
             const admin = await prisma.admin.findUnique({ where: { email } });
             if (!admin || !(await bcrypt.compare(password, admin.password))) {
-                console.log('her---');
                 
-                return this.commonHelper.sendResponse(res, 401, undefined, 'INVALID_CREDS');
+                return this.commonHelper.sendResponse(res, 401, undefined, message.INVALID_CREDS);
             }
             const token = jwt.sign({ id: admin.id }, process.env.SECRET_KEY as string, { expiresIn: '1h' });
             return this.commonHelper.sendResponse(res, 200, { token });

@@ -17,7 +17,7 @@ export class CommonHelperService {
         if (translatedMessage.length > 0) {
             Object.assign(objResponse, {
                 ...objResponse,
-                translatedMessage,
+                message,
             });
         }
         return res.status(statusCode).json(objResponse);
