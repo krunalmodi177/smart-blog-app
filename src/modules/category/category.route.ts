@@ -3,8 +3,6 @@ import { CategoryController } from './category.controller';
 import { ValidationHelper } from '../../helpers/validationHelper.service';
 import { validateCreateCategory } from './category.validator';
 
-const route = express();
-
 class CategoryRoute {
     validator: ValidationHelper = new ValidationHelper();
     categoryController: CategoryController = new CategoryController();
