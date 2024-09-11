@@ -91,12 +91,25 @@ export class BlogController {
             const blogDetails = await prisma.blog.findFirst({
                 where: {
                     id: +id,
+                },
+                include: {
+                    category: {
+                        select: {
+                            name: true,
+                        }
+                    }
                 }
             });
             if (!blogDetails) {
                 return this.commonHelper.sendResponse(res, 200, undefined, Messages.BLOG_NOT_FOUND);
             }
-            return this.commonHelper.sendResponse(res, 200, { blog: blogDetails });
+            const blog: any = {
+                ...blogDetails,
+                category: blogDetails.category.name, 
+            }
+
+            // delete blog.category;
+            return this.commonHelper.sendResponse(res, 200, { blog });
 
         } catch (error) {
             return this.commonHelper.sendResponse(res, 500, undefined, Messages.SOMETHING_WENT_WRONG);
@@ -162,10 +175,10 @@ export class BlogController {
             }
             const blog: any = {
                 ...blogDetails,
-                'category name': blogDetails.category.name, 
+                category: blogDetails.category.name, 
             }
 
-            delete blog.category?.name;
+            // delete blog.category;
             if (exportType === 'csv') {
                 const csvData = await this.commonHelper.convertJsonToCsv([blog])
                 return this.commonHelper.sendFileInResponse(res, 'text/csv', csvData, blogDetails.title)

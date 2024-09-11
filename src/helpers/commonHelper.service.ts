@@ -84,7 +84,7 @@ export class CommonHelperService {
 
             // Add category
             doc.setFontSize(10);
-            doc.text(`Category: ${data['category name']}`, 15, doc.internal.pageSize.height - 20);
+            doc.text(`Category: ${data.category}`, 15, doc.internal.pageSize.height - 20);
 
             // Add image if it exists
             const imageDataUrl = await this.convertImageToBase64('https://farm9.staticflickr.com/8505/8441256181_4e98d8bff5_z_d.jpg')
