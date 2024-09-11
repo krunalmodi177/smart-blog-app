@@ -1,10 +1,11 @@
 import { NextFunction, Request, Response } from "express";
+import { Messages } from "./messages";
 
 export class ValidationHelper {
     public validateBody(validator: any) {
         return async (req: Request, res: Response, next: NextFunction) => {
             const { error, value } = await validator.validate(req.body, { abortEarly: false });
-            if (error)  {
+            if (error) {
                 const errorMessage = error.details.map((err: any) => ({
                     message: err.message,
                 }));
@@ -12,11 +13,29 @@ export class ValidationHelper {
                 return res.status(400).json({
                     success: false,
                     code: 400,
-                    message: 'Invalid Request'
+                    message: Messages.INVALID_REQUEST,
                 })
             }
             req.body = value;
             next();
         }
+    }
+
+    public validateParams(validator: any) {
+        return async (req: Request, res: Response, next: NextFunction) => {
+            const { error, value } = await validator.validate(req.params, { abortEarly: false });
+            if (error) {
+                const errorMessages = error.details.map((err: any) => ({
+                    message: err.message,
+                }));
+                return res.status(400).json({
+                    success: false,
+                    code: 400,
+                    message: Messages.INVALID_REQUEST,
+                });
+            }
+            req.params = value;
+            next();
+        };
     }
 }

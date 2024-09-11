@@ -1,7 +1,7 @@
 import express from 'express';
 import { CategoryController } from './category.controller';
 import { ValidationHelper } from '../../helpers/validationHelper.service';
-import { validateCreateCategory } from './category.validator';
+import { validateCategory, validateCreateUpdateCategory } from './category.validator';
 
 class CategoryRoute {
     validator: ValidationHelper = new ValidationHelper();
@@ -12,10 +12,10 @@ class CategoryRoute {
     }
 
     init() {
-        this.route.post('/', this.validator.validateBody(validateCreateCategory), this.categoryController.createCategory);
+        this.route.post('/', this.validator.validateBody(validateCreateUpdateCategory), this.categoryController.createCategory);
         this.route.get('/', this.categoryController.getCategories)
-        this.route.put('/:id', this.categoryController.updateCategory);
-        this.route.delete('/:id', this.categoryController.deleteCategory);
+        this.route.put('/:id', this.validator.validateParams(validateCategory), this.validator.validateBody(validateCreateUpdateCategory), this.categoryController.updateCategory);
+        this.route.delete('/:id', this.validator.validateParams(validateCategory), this.categoryController.deleteCategory);
     }
 }
 

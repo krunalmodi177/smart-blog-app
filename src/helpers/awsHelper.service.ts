@@ -1,6 +1,7 @@
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { SESClient, SendEmailCommand, SendEmailCommandInput } from "@aws-sdk/client-ses";
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import logger from "./logger.service";
 
 const region = process.env.REGION || 'us-east-1'
 const bucketName = 'sample-app-1238523'
@@ -23,7 +24,7 @@ export class AwsHelperService {
             const url = await getSignedUrl(this.s3Clent, command);
             return url;
         } catch (error) {
-            console.error('Error in upload from aws.s3.service', error);
+            logger.error('Error in upload from aws.s3.service', error);
             throw error;
         }
     }
@@ -42,7 +43,7 @@ export class AwsHelperService {
 
             return url;
         } catch (error) {
-            console.error('[Error] From getSignedUrlBucket in aws.s3.service', error);
+            logger.error('[Error] From getSignedUrlBucket in aws.s3.service', error);
             throw error;
         }
     }
@@ -58,7 +59,8 @@ export class AwsHelperService {
             return sesResult;
 
         } catch (error) {
-
+            logger.error('Error in sendEmail', error);
+            throw error;
         }
     }
 }

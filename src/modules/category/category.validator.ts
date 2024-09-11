@@ -1,5 +1,9 @@
 import Joi from 'joi';
 
-export const validateCreateCategory = Joi.object({
+export const validateCreateUpdateCategory = Joi.object({
     name: Joi.string().trim().required()
+})
+
+export const validateCategory = Joi.object({
+    id: Joi.number().required(),
 })

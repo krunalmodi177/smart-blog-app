@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import { ALLOWED_IMAGE_SIZE_IN_BYTES, ALLOWED_MIME_TYPES } from '../../helpers/constants';
+import {  ALLOWED_IMAGE_SIZE_IN_BYTES, ALLOWED_MIME_TYPES } from '../../helpers/constants';
 
 
 export const validateImageUpload = Joi.object({
@@ -18,5 +18,22 @@ export const validateCreateBlog = Joi.object({
     title: Joi.string().required(),
     content: Joi.string().required(),
     image: Joi.string().required(),
-    categoryId: Joi.string().required(),
+    categoryId: Joi.number().required(),
 })
+
+
+export const validateUpdateBlog = Joi.object({
+    title: Joi.string().required(),
+    content: Joi.string().required(),
+    image: Joi.string().required(),
+    categoryId: Joi.number().required(),
+});
+
+export const validateBlog = Joi.object({
+    id: Joi.number().required(),
+});
+
+export const validateExportBlog = Joi.object({
+    blogId: Joi.number().required(),
+    exportType: Joi.string().valid('csv', 'pdf')
+});

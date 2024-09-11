@@ -13,5 +13,7 @@ export const Messages = {
     OTP_EXPIRED: 'Invalid or expired OTP',
     PASSWORD_REST: 'Password successfully reset',
     INVALID_CREDS: "Invalid Credentials",
-    INVALID_PASSWORD: "Invalid current password"
+    INVALID_PASSWORD: "Invalid current password",
+    INVALID_REQUEST: 'Invalid Request',
+    BLOG_NOT_FOUND: 'Blog not found'
 }

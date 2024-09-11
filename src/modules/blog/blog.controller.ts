@@ -19,7 +19,7 @@ export class BlogController {
         });
     }
 
-    createBlog = async(req: Request, res: Response) => {
+    createBlog = async (req: Request, res: Response) => {
         const value = req.body;
         try {
             const isCategoryExists = await prisma.category.findUnique({
@@ -27,7 +27,7 @@ export class BlogController {
             });
 
             if (!isCategoryExists) {
-                return res.status(400).json({ msg: Messages.CATEGORY_NOT_EXISTS });
+                return this.commonHelper.sendResponse(res, 400, undefined, Messages.CATEGORY_NOT_EXISTS);
             }
 
             const blog = await prisma.blog.create({
@@ -40,7 +40,7 @@ export class BlogController {
 
     }
 
-    getBlogs = async(req: Request, res: Response) => {
+    getBlogs = async (req: Request, res: Response) => {
         try {
 
             const { search, sortBy, sortOrder, page = DEFAULT_PAGE, pageSize = DEFAULT_PAGE_SIZE } = req.query;
@@ -85,9 +85,36 @@ export class BlogController {
         }
     }
 
-    updateBlog = async(req: Request, res: Response) => {
+    getBlogById = async (req: Request, res: Response) => {
         const { id } = req.params;
         try {
+            const blogDetails = await prisma.blog.findFirst({
+                where: {
+                    id: +id,
+                }
+            });
+            if (!blogDetails) {
+                return this.commonHelper.sendResponse(res, 200, undefined, Messages.BLOG_NOT_FOUND);
+            }
+            return this.commonHelper.sendResponse(res, 200, { blog: blogDetails });
+
+        } catch (error) {
+            return this.commonHelper.sendResponse(res, 500, undefined, Messages.SOMETHING_WENT_WRONG);
+        }
+    }
+
+    updateBlog = async (req: Request, res: Response) => {
+        const { id } = req.params;
+        const { categoryId } = req.body;
+        try {
+            const isCategoryExists = await prisma.category.findUnique({
+                where: { id: categoryId },
+            });
+
+            if (!isCategoryExists) {
+                return this.commonHelper.sendResponse(res, 400, undefined, Messages.CATEGORY_NOT_EXISTS);
+            }
+
             const blog = await prisma.blog.update({
                 where: { id: parseInt(id) },
                 data: req.body,
@@ -99,17 +126,55 @@ export class BlogController {
 
     }
 
-    deleteBlog = async(req: Request, res: Response) => {
+    deleteBlog = async (req: Request, res: Response) => {
         const { id } = req.params;
         try {
             await prisma.blog.delete({
                 where: { id: parseInt(id) },
             });
-            res.status(204).send();
             return this.commonHelper.sendResponse(res, 201, undefined, Messages.BLOG_DELETED);
         } catch (err) {
             return this.commonHelper.sendResponse(res, 500, undefined, Messages.SOMETHING_WENT_WRONG);
         }
+    }
 
+    exportBlog = async (req: Request, res: Response) => {
+        const { blogId, exportType } = req.body;
+        try {
+            const blogDetails = await prisma.blog.findFirst({
+                where: {
+                    id: +blogId,
+                },
+                select: {
+                    id: true,
+                    title: true,
+                    content: true,
+                    image: true,
+                    category: {
+                        select: {
+                            name: true,
+                        }
+                    }
+                }
+            });
+            if (!blogDetails) {
+                return this.commonHelper.sendResponse(res, 200, undefined, Messages.BLOG_NOT_FOUND);
+            }
+            const blog: any = {
+                ...blogDetails,
+                'category name': blogDetails.category.name, 
+            }
+
+            delete blog.category?.name;
+            if (exportType === 'csv') {
+                const csvData = await this.commonHelper.convertJsonToCsv([blog])
+                return this.commonHelper.sendFileInResponse(res, 'text/csv', csvData, blogDetails.title)
+            } else {
+                const pdfBuffer = await this.commonHelper.generatePDFBuffer(blog);
+                return this.commonHelper.sendFileInResponse(res, 'application/pdf', pdfBuffer, blogDetails.title)
+            }
+        } catch (error) {
+            return this.commonHelper.sendResponse(res, 500, undefined, Messages.SOMETHING_WENT_WRONG);
+        }
     }
 }
