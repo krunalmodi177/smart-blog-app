@@ -1,9 +1,0 @@
-model Admin {
-  id               Int       @id @default(autoincrement())
-  email            String    @unique
-  password         String
-  passwordResetOtp String?   @map("password_reset_otp")
-  otpExpiresAt     DateTime? @map("otp_expires_at")
-
-  @@map("admin")
-}

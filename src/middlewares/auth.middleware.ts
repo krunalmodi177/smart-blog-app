@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import * as jwt from 'jsonwebtoken'
-import prisma from "../prisma/db";
 import { CommonHelperService } from "../helpers/commonHelper.service";
+import { Admin } from "../database/models/admin";
 
 export class AuthMiddleware {
     commonHelper: CommonHelperService = new CommonHelperService();;
@@ -17,7 +17,7 @@ export class AuthMiddleware {
                 if (!tokenData?.id) {
                     return this.commonHelper.sendResponse(res, 401, undefined, 'Unauthorized')
                 }
-                const admin = await prisma.admin.findFirst({
+                const admin = await Admin.findOne({
                     where: {
                         id: tokenData.id
                     }

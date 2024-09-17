@@ -1,9 +1,0 @@
-
-model Category {
-  id        Int     @id @default(autoincrement())
-  name      String  @unique
-  isDeleted Boolean @default(false) @map("is_deleted")
-  blogs     Blog[]
-
-  @@map("category")
-}

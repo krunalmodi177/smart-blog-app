@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
-import prisma from "../../prisma/db";
-import { Prisma } from "@prisma/client";
+
 import { Messages } from "../../helpers/messages";
 import { CommonHelperService } from "../../helpers/commonHelper.service";
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from "../../helpers/constants";
+import { Category } from "../../database/models/category";
+import { Op } from "sequelize";
 
 export class CategoryController {
   private readonly commonHelper: CommonHelperService = new CommonHelperService();
@@ -11,7 +12,7 @@ export class CategoryController {
   createCategory = async (req: Request, res: Response) => {
     const { name } = req.body;
     try {
-      const existingCategory = await prisma.category.findUnique({
+      const existingCategory = await Category.findOne({
         where: { name },
       });
 
@@ -19,8 +20,8 @@ export class CategoryController {
         return this.commonHelper.sendResponse(res, 400, undefined, Messages.CATEGORY_EXISTS);
       }
 
-      const category = await prisma.category.create({
-        data: { name },
+      const category = await Category.create({
+        name,
       });
       return this.commonHelper.sendResponse(res, 201, category, Messages.CATEGORY_CREATED);
 
@@ -33,43 +34,39 @@ export class CategoryController {
     try {
       const { search, sortBy, sortOrder, page = DEFAULT_PAGE, pageSize = DEFAULT_PAGE_SIZE } = req.query;
 
-      const sortOptions: Prisma.CategoryOrderByWithRelationInput = sortBy
+      const sortOptions = sortBy
         ? { [sortBy as string]: sortOrder === 'desc' ? 'desc' : 'asc' }
         : { id: 'asc' };
       const skip = (Number(page) - 1) * Number(pageSize);
       const take = Number(pageSize);
 
-      let whereQuery: Prisma.CategoryWhereInput = {
+      let whereQuery: any = {
         isDeleted: false,
       };
 
       if (search) {
-        whereQuery = {
-          ...whereQuery,
-          name: {
-            contains: search as string,
-            mode: 'insensitive'
-          }
+        whereQuery.name = {
+          [Op.iLike]: `%${search}%`,
         }
       }
 
 
       // Fetch categories with search, sort, and pagination
-      const categories = await prisma.category.findMany({
+      const { rows, count } = await Category.findAndCountAll({
         where: whereQuery,
-        orderBy: sortOptions,
-        skip,
-        take,
+        attributes: ['id', 'name'],
+        offset: skip,
+        limit: take,
       });
 
       // Get total count for pagination
-      const totalCount = await prisma.category.count({ where: whereQuery });
       const data = {
-        categories,
-        totalCount,
+        categories: rows,
+        totalCount: count,
       }
       return this.commonHelper.sendResponse(res, 200, data);
     } catch (error) {
+      console.log("🚀 ~ CategoryController ~ getCategories= ~ error:", error)
       return this.commonHelper.sendResponse(res, 500, undefined, Messages.SOMETHING_WENT_WRONG);
     }
   }
@@ -79,23 +76,32 @@ export class CategoryController {
     const value = req.body;
     const { name } = req.body;
     try {
-      const existingCategory = await prisma.category.findUnique({
+      const existingCategory = await Category.findOne({
         where: {
-          NOT: {
-            id: parseInt(id),
-          },
-          name,
-          isDeleted: false,
+          [Op.and]: [
+            {
+              id: {
+                [Op.ne]: parseInt(id), // Equivalent to NOT id = ...
+              },
+            },
+            {
+              name: name,
+            },
+            {
+              isDeleted: false,
+            },
+          ],
         },
-      });
+      });  
 
       // If an existing category with the same name is found, return an error response
       if (existingCategory) {
         return this.commonHelper.sendResponse(res, 400, undefined, Messages.CATEGORY_EXISTS);
       }
-      const category = await prisma.category.update({
-        where: { id: parseInt(id) },
-        data: value,
+      const category = await Category.update(value, {
+        where: {
+          id: +id,
+        }
       });
       return this.commonHelper.sendResponse(res, 200, category, Messages.CATEGORY_UPDATED);
     } catch (err) {
@@ -107,7 +113,7 @@ export class CategoryController {
     const { id } = req.params;
 
     try {
-      await prisma.category.delete({
+      await Category.destroy({
         where: { id: parseInt(id) },
       });
       return this.commonHelper.sendResponse(res, 200, undefined, Messages.CATEGORY_DELETD);

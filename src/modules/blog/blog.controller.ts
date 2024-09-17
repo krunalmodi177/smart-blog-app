@@ -1,10 +1,11 @@
 import { Request, Response } from "express";
-import prisma from "../../prisma/db";
 import { AwsHelperService } from "../../helpers/awsHelper.service";
 import { Messages } from "../../helpers/messages";
 import { CommonHelperService } from "../../helpers/commonHelper.service";
-import { Prisma } from "@prisma/client";
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from "../../helpers/constants";
+import { Category } from "../../database/models/category";
+import { Blog } from "../../database/models/blog";
+import { Op } from "sequelize";
 
 export class BlogController {
     private readonly awsHelperService: AwsHelperService = new AwsHelperService();
@@ -22,7 +23,7 @@ export class BlogController {
     createBlog = async (req: Request, res: Response) => {
         const value = req.body;
         try {
-            const isCategoryExists = await prisma.category.findUnique({
+            const isCategoryExists = await Category.findOne({
                 where: { id: value.categoryId },
             });
 
@@ -30,8 +31,8 @@ export class BlogController {
                 return this.commonHelper.sendResponse(res, 400, undefined, Messages.CATEGORY_NOT_EXISTS);
             }
 
-            const blog = await prisma.blog.create({
-                data: value,
+            const blog = await Blog.create({
+                ...value,
             });
             return this.commonHelper.sendResponse(res, 201, { blog });
         } catch (err) {
@@ -45,38 +46,36 @@ export class BlogController {
 
             const { search, sortBy, sortOrder, page = DEFAULT_PAGE, pageSize = DEFAULT_PAGE_SIZE } = req.query;
 
-            const sortOptions: Prisma.BlogOrderByWithRelationInput = sortBy
+            const sortOptions = sortBy
                 ? { [sortBy as string]: sortOrder === 'desc' ? 'desc' : 'asc' }
                 : { id: 'asc' };
             const skip = (Number(page) - 1) * Number(pageSize);
             const take = Number(pageSize);
 
-            let whereQuery: Prisma.BlogWhereInput = {
+            const whereQuery: any = {
                 isDeleted: false,
             };
 
             if (search) {
-                whereQuery = {
-                    ...whereQuery,
-                    title: {
-                        contains: search as string,
-                        mode: 'insensitive'
-                    }
-                }
+                whereQuery.title = {
+                    [Op.iLike]: `%${search}%`, // Sequelize uses `Op.iLike` for case-insensitive search
+                };
             }
-            const blogs = await prisma.blog.findMany({
-                where: { ...whereQuery },
-                include: {
-                    category: true,
-                },
-                orderBy: sortOptions,
-                skip,
-                take,
+
+            const { rows, count } = await Blog.findAndCountAll({
+                where: whereQuery,
+                include: [{
+                    model: Category,
+                    required: true, 
+                    as: 'category'
+                }],
+                offset: skip,
+                limit: take,
             });
-            const totalCount = await prisma.blog.count({ where: whereQuery });
+
             const data = {
-                blogs,
-                totalCount,
+                blogs: rows,
+                totalCount: count,
             }
             return this.commonHelper.sendResponse(res, 200, data);
         } catch (err) {
@@ -88,27 +87,25 @@ export class BlogController {
     getBlogById = async (req: Request, res: Response) => {
         const { id } = req.params;
         try {
-            const blogDetails = await prisma.blog.findFirst({
+            const blogDetails = await Blog.findOne({
                 where: {
                     id: +id,
                 },
-                include: {
-                    category: {
-                        select: {
-                            name: true,
-                        }
-                    }
-                }
+                include: [{
+                    model: Category,
+                    required: true,
+                    as: 'category'
+                }],
             });
             if (!blogDetails) {
                 return this.commonHelper.sendResponse(res, 200, undefined, Messages.BLOG_NOT_FOUND);
             }
             const blog: any = {
-                ...blogDetails,
-                category: blogDetails.category.name, 
+                ...blogDetails.toJSON(), // Convert Sequelize instance to plain object
+                category: blogDetails.category?.name,
             }
 
-            // delete blog.category;
+            // // delete blog.category;
             return this.commonHelper.sendResponse(res, 200, { blog });
 
         } catch (error) {
@@ -120,63 +117,72 @@ export class BlogController {
         const { id } = req.params;
         const { categoryId } = req.body;
         try {
-            const isCategoryExists = await prisma.category.findUnique({
-                where: { id: categoryId },
-            });
+            // Check if the category exists
+            const isCategoryExists = await Category.findByPk(categoryId);
 
             if (!isCategoryExists) {
                 return this.commonHelper.sendResponse(res, 400, undefined, Messages.CATEGORY_NOT_EXISTS);
             }
 
-            const blog = await prisma.blog.update({
+            // Update the blog
+            const [updated] = await Blog.update(req.body, {
                 where: { id: parseInt(id) },
-                data: req.body,
+                returning: true, // Use returning: true to get the updated instance
             });
-            return this.commonHelper.sendResponse(res, 200, { blog }, Messages.BLOG_UPDATED);
+
+            if (updated) {
+                const blog = await Blog.findByPk(id); // Fetch the updated blog
+                return this.commonHelper.sendResponse(res, 200, { blog }, Messages.BLOG_UPDATED);
+            } else {
+                return this.commonHelper.sendResponse(res, 404, undefined, Messages.BLOG_NOT_FOUND);
+            }
         } catch (err) {
             return this.commonHelper.sendResponse(res, 500, undefined, Messages.SOMETHING_WENT_WRONG);
         }
-
     }
+
 
     deleteBlog = async (req: Request, res: Response) => {
         const { id } = req.params;
         try {
-            await prisma.blog.delete({
+            const blog = await Blog.destroy({
                 where: { id: parseInt(id) },
             });
-            return this.commonHelper.sendResponse(res, 201, undefined, Messages.BLOG_DELETED);
+
+            if (blog) {
+                return this.commonHelper.sendResponse(res, 200, undefined, Messages.BLOG_DELETED);
+            } else {
+                return this.commonHelper.sendResponse(res, 404, undefined, Messages.BLOG_NOT_FOUND);
+            }
         } catch (err) {
             return this.commonHelper.sendResponse(res, 500, undefined, Messages.SOMETHING_WENT_WRONG);
         }
     }
 
+
     exportBlog = async (req: Request, res: Response) => {
         const { blogId, exportType } = req.body;
         try {
-            const blogDetails = await prisma.blog.findFirst({
-                where: {
-                    id: +blogId,
-                },
-                select: {
-                    id: true,
-                    title: true,
-                    content: true,
-                    image: true,
-                    category: {
-                        select: {
-                            name: true,
-                        }
+            const blogDetails = await Blog.findOne({
+                where: { id: +blogId },
+                include: [
+                    {
+                        model: Category,
+                        attributes: ['name'], 
+                        as: 'category'
                     }
-                }
+                ],
             });
+
             if (!blogDetails) {
                 return this.commonHelper.sendResponse(res, 200, undefined, Messages.BLOG_NOT_FOUND);
             }
+
             const blog: any = {
-                ...blogDetails,
-                category: blogDetails.category.name, 
-            }
+                ...blogDetails.toJSON(), // Convert Sequelize instance to plain object
+                category: blogDetails.category?.name,
+            };
+
 
             // delete blog.category;
             if (exportType === 'csv') {
@@ -187,6 +193,7 @@ export class BlogController {
                 return this.commonHelper.sendFileInResponse(res, 'application/pdf', pdfBuffer, blogDetails.title)
             }
         } catch (error) {
+            console.log("🚀 ~ BlogController ~ exportBlog= ~ error:", error)
             return this.commonHelper.sendResponse(res, 500, undefined, Messages.SOMETHING_WENT_WRONG);
         }
     }
